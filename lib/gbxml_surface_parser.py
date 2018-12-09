@@ -121,7 +121,7 @@ def get_fenestration(surface):
 
     for opening in openings:
         opening_name_raw = surface.getElementsByTagName(
-            'CADObjectId')[0].childNodes[0].nodeValue
+            'Name')[0].childNodes[0].nodeValue
         opening_name = get_clean_name(opening_name_raw)
         opening_type = get_opening_type(opening)
         points = get_points(opening)
@@ -144,40 +144,63 @@ def get_fenestration(surface):
     return fenestrations
 
 
-def get_hb_surface(surface):
-    """Return a Honeybee Surface from a gbXML surface dictionary
-
+def get_hb_surfaces(gbxml_surfaces):
+    """Parses a list of gbXML surface objects to return two lists of honeybee surfaces
+    
     Arguments:
-        surface {dict} -- gbXML Surface dictionary
-
+        gbxml_surfaces {list} -- list of gbXML surfaces preparsed
+    
     Returns:
-        HoneybeeSurface -- a Honeybee Surface
+        hb_surfaces {list} -- list of honeybee surfaces from the building studied with fenestration a child surfaces
+        context_hb_surfaces {list} -- list of context surfaces which are not part of the project focus
     """
-    surface_name_raw = surface.getElementsByTagName(
-        'CADObjectId')[0].childNodes[0].nodeValue
-    surface_name = get_clean_name(surface_name_raw)
-    surface_type = get_surface_type(surface)
-    points = get_points(surface)
 
-    # if isinstance(surface_type, Context):
-    #     return HBShadingSurface(name=surface_name,
-    #                             sorted_points=points,
-    #                             is_name_set_by_user=True)
+    hb_surfaces = []
+    hb_context_surfaces = []
 
-    if isinstance(surface_type, AirWall):
-        return None
 
-    elif '_AIR' in surface_name:
-        return None
+    for surface in gbxml_surfaces:
+        # Get surface name
+        surface_name_raw = surface.getElementsByTagName('Name')[0].childNodes[0].nodeValue
+        surface_name = get_clean_name(surface_name_raw)
+        
+        # Get surface material information
+        material_name = surface.getElementsByTagName('CADObjectId')[0].childNodes[0].nodeValue
 
-    else:
-        hb_surface = HBSurface(name=surface_name,
-                               sorted_points=points,
-                               surface_type=surface_type,
-                               is_name_set_by_user=True)
+        # Get surface type and return a compatible Honeybee Surface Type class
+        surface_type = get_surface_type(surface)
+        
+        # Get all the points in the Planar Geometry Polyloop and return them as a list of (x, y, z)
+        surface_points = get_points(surface)
 
-        fenestrations = get_fenestration(surface)
-        for fenestration in fenestrations:
-            hb_surface.add_fenestration_surface(fenestration)
+        # Ignore AirWalls => They are not important for daylighting
+        if isinstance(surface_type, AirWall):
+            pass
 
-        return hb_surface
+        # Sometimes air walls are only indicated through materials...
+        elif '_AIR' in material_name:
+            pass
+        
+        # Any context surfaces are saved seperately to be added or removed depending on the use case
+        elif isinstance(surface_type, Context):
+            hb_surface = HBShadingSurface(name=surface_name,
+                                        sorted_points=surface_points,
+                                        is_name_set_by_user=True)
+
+            hb_context_surfaces.append(hb_surface)
+
+        # Finally we get to Honeybee Surfaces!
+        else:
+            hb_surface = HBSurface(name=surface_name,
+                                sorted_points=surface_points,
+                                surface_type=surface_type,
+                                is_name_set_by_user=True)
+
+            # This function does essentially the same task as the loop above but for glazing
+            fenestrations = get_fenestration(surface)
+            for fenestration in fenestrations:
+                hb_surface.add_fenestration_surface(fenestration)
+                
+            hb_surfaces.append(hb_surface)
+
+    return hb_surfaces, hb_context_surfaces
