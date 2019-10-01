@@ -1,4 +1,10 @@
-# Honeybee Tutorials
+---
+title: Honeybee Tutorials
+date: '2019-06-15'
+featuredImage: 'https://images.unsplash.com/photo-1536362828883-32281f211553'
+excerpt: >-
+  This tutorial series will cover the use of ladybug-tools Honeybee library implemented in pure python!
+---
 
 ## LEED Compliance from XML file
 
