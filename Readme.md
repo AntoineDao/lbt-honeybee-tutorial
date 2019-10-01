@@ -1,7 +1,7 @@
 ---
 title: Honeybee Tutorials
 date: '2019-06-15'
-featuredImage: 'https://images.unsplash.com/photo-1536362828883-32281f211553'
+featuredImage: 'https://images.unsplash.com/photo-1568526381923-caf3fd520382?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80'
 excerpt: >-
   This tutorial series will cover the use of ladybug-tools Honeybee library implemented in pure python!
 ---
